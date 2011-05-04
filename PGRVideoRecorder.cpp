@@ -21,6 +21,13 @@
  */
 
 #include <gtk/gtk.h>
+#include <gdk/gdk.h>
+#include <gthread.h>
+#include <glib.h>
+#include <pthread.h>
+#include <time.h>
+#include <stdio.h>
+#include <unistd.h>
 #include "FlyCapture2.h"
 
 using namespace std;
@@ -31,8 +38,8 @@ unsigned int default_fps = 30;
 char* video_file_path = "capture.avi";
 PGRGuid pgrGuid;
 static bool capture = false;
+static bool close_avi = false;
 BusManager busManager;
-
 
 static void HandleError(Error error) {
 	g_print("************************\n");
@@ -64,19 +71,24 @@ static int connect( GtkWidget *widget, gpointer   data )
 	} else {
 		g_print( "%u cameras are detected\n", numOfCam );
 	}
+
+	return 0;
+}
+
+static void startCapture() {
+	capture = true;
 }
 
 /**
  * Start recording
  * */
-static int captureFromCamera() {
+void* captureFromCamera(void* args) {
 	Error error;
 	g_print( "Capturing from camera %u.\n", 0 );
 	error = busManager.GetCameraFromIndex( 0, &pgrGuid );
 	if ( error != PGRERROR_OK )
 	{
 	   HandleError( error );
-	   return -1;
 	}
 
 	Camera camera;
@@ -84,14 +96,12 @@ static int captureFromCamera() {
 	if (error != PGRERROR_OK)
 	{
 		HandleError( error );
-		return -1;
 	}
 
 	error = camera.StartCapture();
 	if (error != PGRERROR_OK)
 	{
 		HandleError( error );
-		return -1;
 	}
 
 	AVIRecorder recorder;
@@ -102,7 +112,6 @@ static int captureFromCamera() {
 	if (error != PGRERROR_OK)
 	{
 		HandleError( error );
-		return -1;
 	}
 	if ( propInfo.present == true )
 	{
@@ -112,7 +121,6 @@ static int captureFromCamera() {
 		if (error != PGRERROR_OK)
 		{
 			HandleError( error );
-			return -1;
 		}
 		option.frameRate = prop.absValue;
 	} else {
@@ -122,25 +130,26 @@ static int captureFromCamera() {
 	if (error != PGRERROR_OK)
 	{
 	   HandleError( error );
-	   return -1;
 	}
 
 	Image image;
-	capture = true;
-	while (capture) {
-		error = camera.RetrieveBuffer( &image );
-		if (error != PGRERROR_OK)
-		{
-			HandleError( error );
-			g_print("missed a frame due to error!");
-			continue;
-		}
+	while (true) {
+		if(capture) {
+			error = camera.RetrieveBuffer( &image );
+			if (error != PGRERROR_OK)
+			{
+				HandleError( error );
+				g_print("missed a frame due to error!");
+				continue;
+			}
 
-		error = recorder.AVIAppend( &image );
-		if (error != PGRERROR_OK)
-		{
-		   HandleError( error );
-		   return -1;
+			error = recorder.AVIAppend( &image );
+			if (error != PGRERROR_OK)
+			{
+			   HandleError( error );
+			}
+		} else if (close_avi) {
+			break;
 		}
 	}
 
@@ -148,20 +157,19 @@ static int captureFromCamera() {
 	if (error != PGRERROR_OK)
 	{
 	   HandleError( error );
-	   return -1;
 	}
 	error = camera.StopCapture();
 	if (error != PGRERROR_OK)
 	{
 		HandleError( error );
-		return -1;
 	}
 	error = camera.Disconnect();
 	if (error != PGRERROR_OK)
 	{
 		HandleError( error );
-		return -1;
 	}
+
+	return NULL;
 }
 
 static gboolean close_event( GtkWidget *widget, GdkEvent  *event, gpointer   data )
@@ -182,6 +190,7 @@ static void destroy( GtkWidget *widget, gpointer   data )
 static void stopCapture( GtkWidget *widget, gpointer   data )
 {
 	capture = false;
+	close_avi = true;
 }
 
 /**
@@ -192,8 +201,14 @@ int main( int   argc, char *argv[] )
     GtkWidget *window;
     GtkWidget *button;
     GtkWidget *box1;
+    pthread_t capture_thread;
 
+    g_thread_init(NULL);
+    gdk_threads_init();
     gtk_init (&argc, &argv);
+
+    gdk_threads_enter();
+
     window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
     g_signal_connect (window, "PGRVideoRecorder", G_CALLBACK (close_event), NULL);
     g_signal_connect (window, "destroy", G_CALLBACK (destroy), NULL);
@@ -204,14 +219,14 @@ int main( int   argc, char *argv[] )
     gtk_container_add ( GTK_CONTAINER( window ), box1 );
 
     //Connect
-	button = gtk_button_new_with_label( "CONNECT" );
+	button = gtk_button_new_with_label ( "CONNECT" );
 	g_signal_connect (button, "clicked", G_CALLBACK( connect ), NULL);
 	gtk_box_pack_start( GTK_BOX( box1 ), button, TRUE, TRUE, 10 );
 	gtk_widget_show(button);
 
 	//Capture
 	button = gtk_button_new_with_label ( "Capture" );
-	g_signal_connect( button, "clicked", G_CALLBACK( captureFromCamera ), NULL );
+	g_signal_connect( button, "clicked", G_CALLBACK( startCapture ), NULL );
 	gtk_box_pack_start( GTK_BOX( box1 ), button, TRUE, TRUE, 10 );
 	gtk_widget_show( button );
 
@@ -227,9 +242,13 @@ int main( int   argc, char *argv[] )
     gtk_box_pack_start(GTK_BOX(box1), button, TRUE, TRUE, 10);
     gtk_widget_show (button);
 
-
     gtk_widget_show(box1);
     gtk_widget_show (window);
+
+    pthread_create (&capture_thread, NULL, captureFromCamera, NULL);
+
     gtk_main ();
+
+    gdk_threads_leave();
     return 0;
 }

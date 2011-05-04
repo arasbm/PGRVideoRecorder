@@ -30,6 +30,7 @@
 									<listOptionValue builtIn="false" value="-pthread -I/usr/include/gtk-2.0 -I/usr/lib/gtk-2.0/include -I/usr/include/atk-1.0 -I/usr/include/cairo -I/usr/include/gdk-pixbuf-2.0 -I/usr/include/pango-1.0 -I/usr/include/gio-unix-2.0/ -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/pixman-1 -I/usr/include/freetype2 -I/usr/include/libpng12"/>
 									<listOptionValue builtIn="false" value="/usr/include/glib-2.0/"/>
 									<listOptionValue builtIn="false" value="/usr/include/flycapture/"/>
+									<listOptionValue builtIn="false" value="/usr/include/glib-2.0/glib/"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.911180145" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
@@ -607,6 +608,7 @@
 									<listOptionValue builtIn="false" value="/usr/include/gtk-2.0/"/>
 									<listOptionValue builtIn="false" value="/usr/include/glib-2.0/"/>
 									<listOptionValue builtIn="false" value="/usr/include/flycapture/"/>
+									<listOptionValue builtIn="false" value="/usr/include/glib-2.0/glib/"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.230460171" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
@@ -623,6 +625,7 @@
 								<option id="gnu.cpp.link.option.libs.340814305" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" value="gtk"/>
 									<listOptionValue builtIn="false" value="flycapture"/>
+									<listOptionValue builtIn="false" value="gthread"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.19907888" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
