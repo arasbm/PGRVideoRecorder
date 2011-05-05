@@ -77,6 +77,7 @@ static int connect( GtkWidget *widget, gpointer   data )
 
 static void startCapture() {
 	capture = true;
+	g_print("Start recording ...");
 }
 
 /**
@@ -84,7 +85,7 @@ static void startCapture() {
  * */
 void* captureFromCamera(void* args) {
 	Error error;
-	g_print( "Capturing from camera %u.\n", 0 );
+	g_print( "started capture thread for camera %u.\n", 0 );
 	error = busManager.GetCameraFromIndex( 0, &pgrGuid );
 	if ( error != PGRERROR_OK )
 	{
@@ -149,6 +150,7 @@ void* captureFromCamera(void* args) {
 			   HandleError( error );
 			}
 		} else if (close_avi) {
+			g_print("Closing the video file");
 			break;
 		}
 	}
@@ -196,7 +198,7 @@ static void stopCapture( GtkWidget *widget, gpointer   data )
 /**
  * Main
  * */
-int main( int   argc, char *argv[] )
+int main( int argc, char *argv[] )
 {
     GtkWidget *window;
     GtkWidget *button;
