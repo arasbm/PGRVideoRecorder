@@ -81,7 +81,7 @@ static void startCapture() {
 }
 
 /**
- * Start recording
+ * recording thread function
  * */
 void* captureFromCamera(void* args) {
 	Error error;
